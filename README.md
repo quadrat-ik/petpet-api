@@ -40,7 +40,7 @@ To get started with this api, follow these instructions:
 - **Image Request**: Fetch and process images with the following endpoint:
 
   ```
-  GET /pat/{id}?mode={mode}&upd={force_update}&speed={speed}
+  GET /{id}?mode={mode}&upd={force_update}&speed={speed}
   ```
 
   - `id`: The discord user ID to fetch his avatar (must be a number).
