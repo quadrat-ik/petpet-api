@@ -38,7 +38,8 @@ To get started with this api, follow these instructions:
 3. **Build and Run**
 
    ```bash
-   cargo build --release
+   cargo install zigbuild
+   cargo zigbuild --release
    cargo run --release
    ```
 
