@@ -3,7 +3,7 @@ Elapsed time: 17.216736ms (CatmullRom filter)
 
 Elapsed time: 10.135752ms (Nearest filter)
 
-Avatar used in test: ![avatar](/assets/613651509015740416.png)
+Avatar used in test: [avatar](/assets/613651509015740416.png)
 
 ## Getting Started
 
