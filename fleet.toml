@@ -1,5 +1,0 @@
-rd_enabled = true
-fleet_id = "eb86453a-8f19-4e04-bc8c-b64aaf592dce"
-
-[build]
-sccache = "/home/mssr/.cargo/bin/sccache"
