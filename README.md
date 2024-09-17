@@ -1,10 +1,3 @@
-### info
-Elapsed time: 17.216736ms (CatmullRom filter)
-
-Elapsed time: 10.135752ms (Nearest filter)
-
-Avatar used in test: [avatar](/assets/613651509015740416.png)
-
 ## Getting Started
 
 To get started with this api, follow these instructions:
@@ -38,8 +31,7 @@ To get started with this api, follow these instructions:
 3. **Build and Run**
 
    ```bash
-   cargo install zigbuild
-   cargo zigbuild --release
+   cargo build --release
    cargo run --release
    ```
 
@@ -48,7 +40,7 @@ To get started with this api, follow these instructions:
 - **Image Request**: Fetch and process images with the following endpoint:
 
   ```
-  GET /{id}?mode={mode}&upd={force_update}&speed={speed}
+  GET /pat/{id}?mode={mode}&upd={force_update}&speed={speed}
   ```
 
   - `id`: The discord user ID to fetch his avatar (must be a number).

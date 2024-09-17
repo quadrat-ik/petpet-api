@@ -20,8 +20,8 @@ fn main() -> Result<(), Box<dyn error::Error>>
             env::set_var(
                 "RUSTFLAGS",
                 format!(
-                    "{} -C target-cpu=generic -C target-feature=+crt-static -C codegen-units=1 -C \
-                     relocation-model=pic -C link-args=-s -C panic=abort",
+                    "{} -C target-cpu=generic -C target-feature=+crt-static -C \
+                     relocation-model=pic",
                     rustflags
                 )
             );
@@ -31,15 +31,10 @@ fn main() -> Result<(), Box<dyn error::Error>>
         unsafe {
             env::set_var(
                 "RUSTFLAGS",
-                "-C target-cpu=generic -C target-feature=+crt-static -C codegen-units=1 -C \
-                 relocation-model=pic -C link-args=-s -C panic=abort"
+                "-C target-cpu=generic -C target-feature=+crt-static relocation-model=pic"
             );
         }
     }
-
-    println!("cargo:rustc-link-arg=-flto=fat");
-
-    println!("cargo:rustc-link-arg=-fPIC");
 
     println!("cargo:rustc-link-arg=-s");
 

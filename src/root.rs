@@ -154,12 +154,18 @@ async fn handle_image_request(
         },
         "base64" => {
             Ok(HttpResponse::Ok()
-                .insert_header(("Cache-Control", "max-age=3600"))
-                .body(base64_data))
+                .insert_header(actix_web::http::header::CacheControl(vec![
+                    actix_web::http::header::CacheDirective::MaxAge(3600),
+                ]))
+                .insert_header(ContentType::plaintext())
+                .body(format!("data:image/png;base64,{}", base64_data)))
         },
         _ => {
             Ok(HttpResponse::Ok()
-                .insert_header(("Cache-Control", "max-age=3600"))
+                .insert_header(actix_web::http::header::CacheControl(vec![
+                    actix_web::http::header::CacheDirective::MaxAge(3600),
+                ]))
+                .append_header(("Content-Type", "image/gif"))
                 .body(gif_data))
         },
     }

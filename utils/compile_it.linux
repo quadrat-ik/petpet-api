@@ -1,0 +1,195 @@
+#!/usr/bin/python3
+
+import os
+import subprocess
+import sys
+import importlib.util
+
+class CommandRunner:
+    """Class for executing commands and processing results."""
+
+    def __init__(self):
+        from loguru import logger
+
+        # Set up basic configuration for loguru
+        logger.remove()  # Remove default handler
+        logger.add(sys.stdout, level="INFO", format="{time} {level} {message}")
+
+    def run(self, command, check=True):
+        """Execute a command and return the result."""
+        from loguru import logger
+
+        logger.info(f"Running command: {command}")
+        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if check and result.returncode != 0:
+            logger.error(f"Error executing command: {command}")
+            logger.error(result.stderr.decode())
+            sys.exit(result.returncode)
+        return result
+
+class DependencyManager:
+    """Class for checking and installing dependencies."""
+
+    def __init__(self, runner):
+        self.runner = runner
+
+    def check_and_install(self):
+        """Check and install all necessary dependencies."""
+        required_packages = ["git", "curl", "gcc", "g++", "make", "cargo", "cmake"]
+        missing_packages = [pkg for pkg in required_packages if not self.is_installed(pkg)]
+
+        for package in missing_packages:
+            self.install(package)
+
+    def is_installed(self, package):
+        """Check if a package is installed."""
+        result = self.runner.run(f"{package} --version", check=False)
+        return result.returncode == 0
+
+    def install(self, package):
+        """Install a package."""
+        from loguru import logger
+
+        if package == "git":
+            logger.info("Installing git...")
+            self.runner.run("git clone https://github.com/git/git && cd git && make prefix=/usr/local all && sudo make prefix=/usr/local install")
+        elif package == "cargo":
+            logger.info("Installing cargo...")
+            self.runner.run("curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile complete --default-toolchain nightly")
+        elif package == "cmake":
+            self.install_cmake()
+        else:
+            logger.warning(f"Please install {package} manually as automatic installation is not supported.")
+
+    def install_cmake(self):
+        """Download and install CMake."""
+        from loguru import logger
+
+        logger.info("Downloading and installing CMake...")
+        self.runner.run("curl -LO https://cmake.org/files/v3.25/cmake-3.25.3-linux-x86_64.sh")
+        self.runner.run("chmod +x cmake-3.25.3-linux-x86_64.sh")
+        self.runner.run("sudo ./cmake-3.25.3-linux-x86_64.sh --skip-license --prefix=/usr/local")
+
+class MoldBuilder:
+    """Class for cloning, building, and installing mold."""
+
+    def __init__(self, runner):
+        self.runner = runner
+
+    def is_installed(self):
+        """Check if mold is installed."""
+        result = self.runner.run("mold --version", check=False)
+        return result.returncode == 0
+
+    def build(self):
+        """Clone, build, and install mold if not already installed."""
+        from loguru import logger
+
+        if self.is_installed():
+            logger.info("mold is already installed.")
+            return
+
+        if os.path.exists("mold"):
+            logger.info("Directory 'mold' already exists. Removing...")
+            self.runner.run("rm -rf mold")
+
+        logger.info("Cloning and building mold...")
+        self.runner.run("git clone --branch stable https://github.com/rui314/mold.git")
+        os.chdir("mold")
+        self.runner.run("./install-build-deps.sh", check=False)
+        self.runner.run("cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=c++ -B build")
+        self.runner.run("cmake --build build -j$(nproc)")
+        self.runner.run("sudo cmake --build build --target install")
+        os.chdir("..")
+
+class ProjectBuilder:
+    """Class for setting up project build."""
+
+    def __init__(self, runner):
+        self.runner = runner
+
+    def is_installed(self, tool):
+        """Check if a tool is installed."""
+        tool_path = os.path.expanduser(f"~/.cargo/bin/{tool}")
+        return os.path.isfile(tool_path)
+
+    def build(self):
+        """Set up build tools, build the project, and move the executable."""
+        from loguru import logger
+        import shutil
+
+        logger.info("Checking for sccache and zigbuild...")
+        if (not self.is_installed("sccache")) or (not self.runner.run("which sccache", check=False)):
+            logger.info("Installing sccache...")
+            self.runner.run("cargo install sccache")
+        else:
+            logger.info("sccache is already installed.")
+
+        if (not self.is_installed("cargo-zigbuild")) or (not self.runner.run("which cargo-zigbuild", check=False)):
+            logger.info("Installing zigbuild...")
+            self.runner.run("cargo install cargo-zigbuild")
+        else:
+            logger.info("zigbuild is already installed.")
+
+        self.configure_cargo()
+        self.runner.run("cargo clean")
+        self.runner.run("cargo-zigbuild zigbuild --release")
+        os.makedirs("build", exist_ok=True)
+        shutil.move("./target/release/petpet", "./build/petpet")
+
+    def configure_cargo(self):
+        """Configure Cargo settings."""
+        from loguru import logger
+
+        config_content = """[build]
+rustc-wrapper = "sccache"
+
+[target.x86_64-unknown-linux-gnu]
+rustflags = [
+    '-Clink-arg=-fuse-ld=mold',
+    '-Zshare-generics=y',
+]
+"""
+        logger.info("Configuring Cargo...")
+        with open("./.cargo/config.toml", "w") as config_file:
+            config_file.write(config_content)
+
+class Cleanup:
+    """Class for cleaning up temporary files and directories."""
+
+    def __init__(self, runner):
+        self.runner = runner
+
+    def clean(self):
+        """Remove temporary files and directories."""
+        from loguru import logger
+
+        logger.info("Cleaning up temporary files and directories...")
+        self.runner.run("rm -rf mold", check=False)
+        self.runner.run("rm -rf CMake", check=False)
+        self.runner.run("rm -rf cmake*", check=False)
+        self.runner.run("cargo clean", check=True)
+
+def check_dependencies():
+    """Check if required libraries are available."""
+    required_libraries = ["loguru", "shutil"]
+    for library in required_libraries:
+        if importlib.util.find_spec(library) is None:
+            print(f"Required library '{library}' is not installed.")
+            sys.exit(1)
+
+def main():
+    check_dependencies()
+    runner = CommandRunner()
+    dependency_manager = DependencyManager(runner)
+    mold_builder = MoldBuilder(runner)
+    project_builder = ProjectBuilder(runner)
+    cleanup = Cleanup(runner)
+
+    dependency_manager.check_and_install()
+    mold_builder.build()
+    project_builder.build()
+    cleanup.clean()
+
+if __name__ == "__main__":
+    main()

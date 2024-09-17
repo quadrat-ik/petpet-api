@@ -10,7 +10,6 @@ name = "petpet"
 path = "src/root.rs"
 
 [dependencies]
-actix-web = "4.0"
 actix-rt = "2.5"
 image = "0.24"
 petpet = "2.4.3"
@@ -21,13 +20,17 @@ dotenv = "0.15"
 env_logger = "0.11"
 colored = "2.1"
 
+[dependencies.actix-web]
+version = "4.0"
+features = ["rustls-0_23"]
+
 [dependencies.serde]
 version = "1.0"
 features = ["derive"]
 
 [dependencies.reqwest]
 version = "0.11"
-features = ["json"]
+features = ["json", "rustls-tls"]
 
 [dependencies.tokio]
 version = "1"
