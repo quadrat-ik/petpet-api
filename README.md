@@ -1,3 +1,8 @@
+## PetPet in Other Languages
+
+* **Python** - [nakidai/petthecord](https://github.com/nakidai/petthecord)
+* **Go** - [wavy-cat/petpet-go](https://github.com/wavy-cat/petpet-go)
+
 ## Getting Started
 
 To get started with this api, follow these instructions:
